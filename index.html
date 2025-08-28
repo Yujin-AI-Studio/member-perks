@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🎁 Member Perks</title>
+  <style>
+    :root{--bg:#f7f7fb;--fg:#111827;--muted:#6b7280;--border:#e5e7eb;--brand:#2563eb;--brand-2:#1d4ed8;--danger:#dc2626;--pin-bg:#fde68a;--pin-fg:#92400e;--live:#065f46;--live-bg:#d1fae5;--draft:#92400e;--draft-bg:#fef3c7}
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,"Helvetica Neue",Arial,"Apple Color Emoji","Segoe UI Emoji";background:var(--bg);color:var(--fg)}
+    a{color:inherit}
+    .container{max-width:1024px;margin:0 auto;padding:16px}
+    header.sticky{position:sticky;top:0;z-index:50;backdrop-filter:blur(6px);background:rgba(255,255,255,.86);border-bottom:1px solid var(--border)}
+    .row{display:flex;gap:8px;align-items:center} .grow{flex:1 1 auto}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;border:1px solid var(--border);padding:8px 12px;background:#fff;cursor:pointer;font-weight:600;font-size:13px}
+    .btn:hover{background:#f3f4f6} .btn.primary{border:none;background:var(--brand);color:#fff} .btn.primary:hover{background:var(--brand-2)} .btn.danger{border:none;background:var(--danger);color:#fff}
+    input[type=text],input[type=password],input[type=url],textarea,select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;font-size:14px;outline:none}
+    input:focus,textarea:focus,select:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+    .card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+    .grid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:12px}
+    @media (min-width:640px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (min-width:1024px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    .muted{color:var(--muted);font-size:12px} .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+    .badge.pin{background:var(--pin-bg);color:var(--pin-fg)} .mode{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:600}
+    .mode.live{background:var(--live-bg);color:var(--live)} .mode.draft{background:var(--draft-bg);color:var(--draft)} .footer{border-top:1px solid var(--border);background:rgba(255,255,255,.7);font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header class="sticky">
+    <div class="container">
+      <div class="row" style="justify-content:space-between;align-items:flex-start;gap:12px;">
+        <div class="grow">
+          <h1 style="margin:0;font-size:22px">🎁 Member Perks</h1>
+          <div class="muted">Please share our page for more!</div>
+        </div>
+        <div class="row" id="authRow">
+          <input id="pinInput" type="password" placeholder="Admin PIN" style="width:120px" />
+          <button class="btn primary" id="loginBtn">Admin Login</button>
+        </div>
+        <div class="row" id="adminRow" style="display:none;flex-wrap:wrap;gap:8px 8px">
+          <span id="modeChip" class="mode live">LIVE</span>
+          <span class="muted" id="repoBadge" style="font-size:11px"></span>
+          <button class="btn" id="reloadLiveBtn">Reload Live</button>
+          <button class="btn" id="switchToDraftBtn">Edit (Draft)</button>
+          <button class="btn" id="switchToLiveBtn" style="display:none">View Live</button>
+          <button class="btn" id="connectGitHubBtn">Connect GitHub</button>
+          <button class="btn danger" id="disconnectGitHubBtn" style="display:none">Disconnect</button>
+          <button class="btn primary" id="publishBtn">Publish</button>
+          <label class="btn" for="importInput" style="cursor:pointer;">Import JSON</label>
+          <input id="importInput" type="file" accept="application/json" style="display:none" />
+          <button class="btn" id="exportBtn">Export JSON</button>
+          <button class="btn" id="logoutBtn">Logout</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <input id="searchInput" type="text" placeholder="Search…" class="grow" />
+        <select id="sortSelect" style="width:140px"><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="az">A → Z</option></select>
+      </div>
+      <div id="infoBar" class="muted" style="margin-top:8px;"></div>
+    </div>
+  </header>
+
+  <section class="container" id="formSection" style="display:none;margin-top:16px;">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;">
+        <h2 style="margin:0;font-size:18px" id="formTitle">Create a Post</h2>
+        <div class="muted" id="descCounter">0/280</div>
+      </div>
+      <div style="margin-top:12px;display:grid;gap:10px;">
+        <div><label>Title <span style="color:#dc2626">*</span></label><input id="titleInput" type="text" placeholder="e.g., Exclusive Offer" /></div>
+        <div><label>Short Description</label><textarea id="descInput" rows="3" placeholder="A quick summary (max 280 chars)"></textarea></div>
+        <div><label>Destination Link (URL) <span style="color:#dc2626">*</span></label><input id="urlInput" type="url" placeholder="https://example.com/page" /></div>
+        <div class="muted" id="errorBox" style="color:#dc2626;display:none"></div>
+        <div class="row"><button class="btn primary" id="submitBtn">Publish Post</button><button class="btn" id="cancelBtn" style="display:none">Cancel</button></div>
+      </div>
+    </div>
+  </section>
+
+  <main class="container" style="margin-top:16px;margin-bottom:96px;">
+    <div id="emptyState" class="card" style="text-align:center;padding:36px;">
+      <div style="font-size:28px">🗂️</div><div style="font-weight:600">No posts yet</div>
+      <div class="muted">Use Admin Login to create your first post or load live JSON.</div>
+    </div>
+    <div id="grid" class="grid" style="display:none"></div>
+  </main>
+
+  <footer class="footer">
+    <div class="container" style="padding:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <span>Made with ❤️ — Live posts load from <code id="liveUrlLabel"></code>. Drafts are stored locally in this browser.</span>
+      <span style="margin-left:auto">PIN: <code>050905</code></span>
+    </div>
+  </footer>
+
+  <script>
+    // ===== CONFIG =====
+    const ADMIN_PIN = "050905";
+    const POSTS_URL = "posts.json"; // public JSON at same origin
+    const GH = { owner: "Yujin-AI-Studio", repo: "member-perks", branch: "main", path: "posts.json" };
+    const GH_TOKEN_KEY = "landing_link_posts_github_token_v1"; // stored only in this browser
+    const DRAFT_KEY = "landing_link_posts_draft_v1"; // local draft storage
+
+    // ===== STATE =====
+    let items = [], liveItems = [], admin = false, editingId = null, sortMode = "newest", mode = "live";
+
+    // ===== HELPERS =====
+    const $ = (id) => document.getElementById(id);
+    const escape = (s) => String(s).replace(/[&<>"']/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+    const uid = () => (crypto.randomUUID?crypto.randomUUID():("id_"+Math.random().toString(36).slice(2)+Date.now()));
+    const now = () => Date.now();
+    const hasGhToken = () => Boolean(localStorage.getItem(GH_TOKEN_KEY));
+    function setInfo(msg){ $("infoBar").textContent = msg||""; }
+    function saveDraft(list){ try{localStorage.setItem(DRAFT_KEY, JSON.stringify(list));}catch(e){} }
+    function loadDraft(){ try{ const raw=localStorage.getItem(DRAFT_KEY); const x=raw?JSON.parse(raw):[]; return Array.isArray(x)?x:[]; }catch{ return []; } }
+
+    async function fetchLive(){ setInfo("Loading live posts…"); try{ const url=POSTS_URL+(POSTS_URL.includes("?")?"&":"?")+"t="+Date.now(); const res=await fetch(url,{mode:'cors',cache:'no-store'}); if(!res.ok) throw new Error(res.status+" "+res.statusText); const data=await res.json(); if(!Array.isArray(data)) throw new Error("Invalid JSON: expected an array"); liveItems=data.map(cleanItem); items=[...liveItems]; mode='live'; setAdminUI(); render(); setInfo("Live data loaded."); }catch(e){ setInfo("Couldn't load live posts ("+(e.message||e)+"). Showing local draft (if any)."); const draft=loadDraft(); items=draft; mode='draft'; setAdminUI(); render(); } }
+
+    function cleanItem(x){ const t=Number(x.updatedAt||x.createdAt||Date.now()); return { id:String(x.id||uid()), title:String(x.title||""), description:String(x.description||""), url:String(x.url||""), createdAt:Number(x.createdAt||t), updatedAt:Number(x.updatedAt||t), pinned:Boolean(x.pinned) }; }
+    function validate({title,url,description}){ if(!title||!title.trim()) return "Please add a title."; if(!url||!url.trim()) return "Please add a destination link (URL)."; try{ const u=new URL(url.trim()); if(!/^https?:$/i.test(u.protocol)) throw new Error("URL must start with http or https"); }catch(e){ return e.message||"Please enter a valid URL"; } if((description||"").length>280) return "Description is too long (max 280 characters)."; return null; }
+    function applySortFilter(list){ const q=$("searchInput").value.trim().toLowerCase(); let out=list; if(q){ out=out.filter(x=> (x.title+"\n"+(x.description||"")+"\n"+(x.url||"")).toLowerCase().includes(q)); } out=[...out].sort((a,b)=>{ const pinDiff=(b.pinned?1:0)-(a.pinned?1:0); if(pinDiff) return pinDiff; if(sortMode==="newest") return (b.updatedAt||b.createdAt)-(a.updatedAt||a.createdAt); if(sortMode==="oldest") return (a.updatedAt||a.createdAt)-(b.updatedAt||b.createdAt); return a.title.localeCompare(b.title); }); return out; }
+
+    function render(){ const grid=$("grid"), empty=$("emptyState"); grid.innerHTML=""; const list=applySortFilter(items); if(list.length===0){ empty.style.display="block"; grid.style.display="none"; } else { empty.style.display="none"; grid.style.display="grid"; for(const item of list){ const art=document.createElement("article"); art.className="card"; art.innerHTML=`<div class="row" style="align-items:flex-start;">${item.pinned?'<span class="badge pin">Pinned</span>':''}<time class="muted" style="margin-left:auto" title="${new Date(item.updatedAt||item.createdAt).toLocaleString()}">${new Date(item.createdAt).toLocaleDateString()}</time></div><h3 style="margin:10px 0 4px 0;font-size:18px;font-weight:700"><a href="${escape(item.url)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;border-bottom:2px solid transparent">${escape(item.title)}</a></h3>${item.description?`<p class="muted" style="font-size:14px;margin:6px 0 0 0;color:#374151">${escape(item.description)}</p>`:''}<div class="row" style="margin-top:10px;"><a class="btn primary" href="${escape(item.url)}" target="_blank" rel="noopener noreferrer">Visit Link</a><button class="btn" data-action="copy" data-id="${item.id}">Copy URL</button>${admin?`<span style="flex:1"></span><button class="btn" data-action="pin" data-id="${item.id}">${item.pinned?'Unpin':'Pin'}</button><button class="btn" data-action="edit" data-id="${item.id}">Edit</button><button class="btn danger" data-action="delete" data-id="${item.id}">Delete</button>`:''}</div>`; grid.appendChild(art);} } autoResizeTick(); const liveUrlLabel=$("liveUrlLabel"); if(liveUrlLabel) liveUrlLabel.textContent=POSTS_URL; }
+
+    function setAdminUI(){ $("authRow").style.display=admin?"none":"flex"; $("adminRow").style.display=admin?"flex":"none"; $("formSection").style.display=admin&&mode==='draft'?"block":"none"; $("modeChip").textContent=mode.toUpperCase(); $("modeChip").className="mode "+(mode==='live'?'live':'draft'); $("switchToDraftBtn").style.display=mode==='live'?'inline-flex':'none'; $("switchToLiveBtn").style.display=mode==='draft'?'inline-flex':'none'; $("formTitle").textContent=editingId?"Edit Post":"Create a Post"; $("cancelBtn").style.display=editingId?"inline-flex":"none"; $("connectGitHubBtn").style.display=hasGhToken()?"none":"inline-flex"; $("disconnectGitHubBtn").style.display=hasGhToken()?"inline-flex":"none"; $("publishBtn").textContent=hasGhToken()?"Publish to GitHub":"Download JSON"; $("repoBadge").textContent=`${GH.owner}/${GH.repo}@${GH.branch}/${GH.path}`; }
+
+    function clearForm(){ editingId=null; $("titleInput").value=""; $("descInput").value=""; $("urlInput").value=""; $("descCounter").textContent="0/280"; $("errorBox").style.display="none"; $("formTitle").textContent="Create a Post"; $("submitBtn").textContent="Publish Post"; }
+    function fillForm(item){ editingId=item.id; $("titleInput").value=item.title||""; $("descInput").value=item.description||""; $("urlInput").value=item.url||""; $("descCounter").textContent=(item.description||"").length+"/280"; $("formTitle").textContent="Edit Post"; $("submitBtn").textContent="Save Changes"; window.scrollTo({top:0,behavior:"smooth"}); }
+
+    async function githubGetFile(){ const token=localStorage.getItem(GH_TOKEN_KEY); if(!token) throw new Error("No GitHub token"); const url=`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}?ref=${GH.branch}`; const res=await fetch(url,{headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json'}}); if(res.status===404) return null; if(!res.ok) throw new Error(await res.text()); return await res.json(); }
+    async function githubPutFile(content,sha){ const token=localStorage.getItem(GH_TOKEN_KEY); if(!token) throw new Error("No GitHub token"); const url=`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`; const payload={message:`chore: update posts.json ${new Date().toISOString()}`,content:btoa(unescape(encodeURIComponent(content))),branch:GH.branch}; if(sha) payload.sha=sha; const res=await fetch(url,{method:'PUT',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json'},body:JSON.stringify(payload)}); if(!res.ok) throw new Error(await res.text()); return await res.json(); }
+    async function publish(){ const json=JSON.stringify(items,null,2); if(hasGhToken()){ try{ setInfo('Publishing to GitHub…'); const meta=await githubGetFile(); await githubPutFile(json, meta?.sha); setInfo('Published! Give GitHub Pages a few seconds, then click Reload Live.'); alert('Published to GitHub.'); }catch(e){ console.error(e); alert('GitHub publish failed: '+(e?.message||e)); setInfo('GitHub publish failed.'); } } else { const blob=new Blob([json],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`posts.json`; a.click(); setTimeout(()=>URL.revokeObjectURL(url),5000); alert('Upload the downloaded posts.json to the same folder as this HTML on GitHub. Then click "Reload Live".'); } }
+
+    window.addEventListener("load", async()=>{ render(); try{ const qp=new URLSearchParams(location.search); const p=qp.get("admin"); if(p&&p===ADMIN_PIN){ admin=true; } }catch{} setAdminUI(); await fetchLive(); });
+    $("loginBtn").addEventListener("click",()=>{ const p=$("pinInput").value; if(p===ADMIN_PIN){ $("pinInput").value=""; admin=true; setAdminUI(); } else { alert("Wrong PIN"); } });
+    $("logoutBtn").addEventListener("click",()=>{ admin=false; setAdminUI(); });
+    $("reloadLiveBtn").addEventListener("click",fetchLive);
+    $("switchToDraftBtn").addEventListener("click",()=>{ mode='draft'; items=loadDraft().length?loadDraft():[...liveItems]; saveDraft(items); setAdminUI(); render(); });
+    $("switchToLiveBtn").addEventListener("click",()=>{ mode='live'; items=[...liveItems]; setAdminUI(); render(); });
+    $("descInput").addEventListener("input",()=>{ const n=$("descInput").value.length; $("descCounter").textContent=n+"/280"; });
+    $("submitBtn").addEventListener("click",()=>{ if(mode!=='draft'){ alert('Switch to Draft to edit.'); return; } const payload={ title:$("titleInput").value, description:$("descInput").value, url:$("urlInput").value }; const err=validate(payload); if(err){ const box=$("errorBox"); box.textContent=err; box.style.display="block"; return; } const t=now(); if(editingId){ items=items.map(x=> x.id===editingId?{...x,...payload,updatedAt:t}:x); } else { items=[{ id:uid(), pinned:false, createdAt:t, updatedAt:t, ...payload }, ...items]; } saveDraft(items); clearForm(); render(); });
+    $("cancelBtn").addEventListener("click",clearForm);
+    $("exportBtn").addEventListener("click",()=>{ const blob=new Blob([JSON.stringify(items,null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`link-posts-draft-${new Date().toISOString().slice(0,10)}.json`; a.click(); setTimeout(()=>URL.revokeObjectURL(url),5000); });
+    $("importInput").addEventListener("change",(e)=>{ const file=e.target.files?.[0]; if(!file) return; const reader=new FileReader(); reader.onload=()=>{ try{ const data=JSON.parse(reader.result); if(!Array.isArray(data)) throw new Error("Invalid file format."); items=data.map(cleanItem); saveDraft(items); mode='draft'; setAdminUI(); render(); }catch(err){ alert("Import failed: "+(err?.message||"Unknown error")); } }; reader.readAsText(file); });
+    $("searchInput").addEventListener("input",render);
+    $("sortSelect").addEventListener("change",(e)=>{ sortMode=e.target.value; render(); });
+    $("grid").addEventListener("click",(e)=>{ const btn=e.target.closest("button"); if(!btn) return; const id=btn.getAttribute("data-id"); const action=btn.getAttribute("data-action"); if(!id||!action) return; const item=items.find(x=>x.id===id); if(!item) return; if(action==="copy"){ navigator.clipboard?.writeText(item.url).catch(()=>{}); } else if(action==="pin"){ if(mode!=="draft"){ alert('Switch to Draft to edit.'); return; } item.pinned=!item.pinned; item.updatedAt=now(); saveDraft(items); render(); } else if(action==="edit"){ if(mode!=="draft"){ alert('Switch to Draft to edit.'); return; } fillForm(item); $("formSection").style.display="block"; autoResizeTick(); } else if(action==="delete"){ if(mode!=="draft"){ alert('Switch to Draft to edit.'); return; } if(confirm("Delete this post?")){ items=items.filter(x=>x.id!==id); saveDraft(items); render(); } } });
+
+    function postHeight(){ const h=Math.max(document.documentElement.scrollHeight,document.body.scrollHeight); const payloads=[{type:'embed-size',height:h},{event:'resize',height:h},{type:'setHeight',height:h},h]; for(const p of payloads){ try{window.parent.postMessage(p,'*');}catch{} try{window.parent.postMessage(JSON.stringify(p),'*');}catch{} } }
+    let resizeRAF=null; function autoResizeTick(){ if(resizeRAF) cancelAnimationFrame(resizeRAF); resizeRAF=requestAnimationFrame(postHeight); }
+    const ro=new ResizeObserver(()=> autoResizeTick()); ro.observe(document.body); window.addEventListener('load',autoResizeTick); window.addEventListener('resize',autoResizeTick); setInterval(postHeight,1000);
+  </script>
+</body>
+</html>
+```
+
+---
+
+## 2) `posts.json` (paste this file next to index.html)
+
+```json
+[
+  {
+    "id": "hello-world",
+    "title": "Welcome!",
+    "description": "This site is powered by a simple JSON file.",
+    "url": "https://example.com/",
+    "createdAt": 1724800000000,
+    "updatedAt": 1724800000000,
+    "pinned": true
+  }
+]
+```
+
+**That’s it.** After committing both files, enable **Settings → Pages → Deploy from a branch → main / (root)**. Your public URL will be:
+
+```
+https://yujin-ai-studio.github.io/member-perks/
+```
+
+Open the site → **Admin Login** (PIN `050905`) → **Edit (Draft)** → add posts → **Publish**.
